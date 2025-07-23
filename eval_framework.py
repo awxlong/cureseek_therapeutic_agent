@@ -64,7 +64,7 @@ class BaseModel(ABC):
         pass
     
     @abstractmethod
-    def inference(self, prompt: str, max_tokens: int = 1024) -> Tuple[str, List[Dict]]:
+    def inference(self, prompt: str, max_tokens: int = 2048) -> Tuple[str, List[Dict]]:
         """Run inference on the model
         
         Returns:
@@ -97,7 +97,7 @@ class ChatGPTModel(BaseModel):
             api_version=api_version,
         )
     
-    def inference(self, prompt: str, max_tokens: int = 1024) -> Tuple[str, List[Dict]]:
+    def inference(self, prompt: str, max_tokens: int = 2048) -> Tuple[str, List[Dict]]:
         """ChatGPT inference"""
         messages = [{"role": "user", "content": prompt}]
         
@@ -136,10 +136,14 @@ class LocalModel(BaseModel):
             logger.error(f"Failed to import local model dependencies: {e}")
             raise
     
-    def inference(self, prompt: str, max_tokens: int = 1024) -> Tuple[str, List[Dict]]:
-        """Local model inference"""
+    def inference(self, prompt: str, max_tokens: int = 2048) -> Tuple[str, List[Dict]]:
+        """Local model inference
+        
+        TODO: CHANGE max_tokens size during production
+        
+        """
         messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": "You are a helpful biochemistry assistant."},
             {"role": "user", "content": prompt}
         ]
         
@@ -179,8 +183,10 @@ class CustomModel(BaseModel):
         """Custom models are already loaded"""
         logger.info(f"Using custom model: {self.model_name}")
     
-    def inference(self, prompt: str, max_tokens: int = 1024) -> Tuple[str, List[Dict]]:
-        """Custom model inference"""
+    def inference(self, prompt: str, max_tokens: int = 2048) -> Tuple[str, List[Dict]]:
+        """Custom model inference
+        TODO: CHANGE max_tokens size during production
+        """
         try:
             # For custom models, we'll create a simple message structure
             messages = [{"role": "user", "content": prompt}]
