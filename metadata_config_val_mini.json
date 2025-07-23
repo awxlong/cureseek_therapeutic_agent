@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "model_name": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "model_type": "LocalModel",
+    "track": "agentic_reasoning",
+    "base_model_type": "OpenWeighted",
+    "base_model_name": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "dataset": "cure_bench_pharse_1",
+    "additional_info": "Submission using configuration file"
+  },
+  "dataset": {
+    "dataset_name": "cure_bench_pharse_1",
+    "dataset_path": "data/curebench_valset_pharse1_mini.jsonl",
+    "description": "CureBench 2025 val questions for prototyping model training"
+  }
+}
