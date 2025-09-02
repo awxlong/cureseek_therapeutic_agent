@@ -1,15 +1,23 @@
-
+"""
+Helper functions doing prompt engineering and applying 
+chat template to perform inference on LLMs
+"""
 
 def format_dataset_entry_self_correction(example, tokenizer):
     """
-    Applies the model's (now corrected) official chat template with a system prompt.
+    Applies the model's chat template with a system prompt.
+
+    Args:
+        example: dict - sample from json file
+        tokenizer: obj - LLM tokenizer
+
+    Returns:
+        dict - sample text with chat template applied
     """
     SELF_CORRECTION_SYSTEM_PROMPT = """You are an expert clinical reasoning agent specializing in pharmaceutical therapeutics. Your task is to analyze multiple-choice questions. First, provide a detailed step-by-step reasoning process within <think> tags, explaining why the correct option is right and the others are wrong. Then, state the final correct answer in the format 'Letter: Full Answer Text'."""
 
     user_content = f"{example['question']} \nOptions: {example['options']} \nThe correct final answer is known to be: '{example['correct_answer']}'. Please provide the reasoning or the tools that would help you infer the correct answer. "
     
-    
-    # ** THE NEW MESSAGES LIST WITH A SYSTEM PROMPT **
     messages = [
         {"role": "system", "content": SELF_CORRECTION_SYSTEM_PROMPT},
         {"role": "user", "content": user_content},
@@ -25,11 +33,17 @@ def format_dataset_entry_self_correction(example, tokenizer):
 
 
 def format_dataset_entry_for_sft(example, tokenizer):
-    print("Formatting the filtered dataset with the system prompt...")
+    """
+    Applies the model's chat template with a system prompt.
 
+    Args:
+        example: dict - sample from json file
+        tokenizer: obj - LLM tokenizer
+
+    Returns:
+        dict - sample text with chat template applied
     """
-    Applies the model's (now corrected) official chat template with a system prompt.
-    """
+
     user_content = example['question']
     assistant_content = f"<think>{example['reasoning']}</think> The correct answer is {example['correct_answer']}"
     
@@ -48,9 +62,46 @@ def format_dataset_entry_for_sft(example, tokenizer):
     return {"text": formatted_text}
 
 
+def format_dataset_entry_for_inference(example, tokenizer):
+    """
+    Applies the model's chat template with a system prompt.
+
+    Args:
+        example: dict - sample from json file
+        tokenizer: obj - LLM tokenizer
+
+    Returns:
+        dict - sample text with chat template applied
+    """
+
+    user_content = f"{example['question']} \nOptions: {example['options']} \nPlease carefully reason through the question and infer the correct answer."
+    
+    GENERATION_SYSTEM_PROMPT = """You are an expert clinical reasoning agent specializing in pharmaceutical therapeutics. Your task is to analyze multiple-choice questions. Provide a reasoning process to infer the correct answer and why other options are wrong. Then, output the answer in the format 'Letter: Full Answer Text'."""
+    
+    messages = [
+        {"role": "system", "content": GENERATION_SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+    
+    formatted_text = tokenizer.apply_chat_template(
+        messages, 
+        tokenize=False, 
+        add_generation_prompt=True
+    )
+    
+    return {"text": formatted_text}
+
+
 def format_dataset_entry_entity_extraction(example, tokenizer):
     """
-    Applies the model's (now corrected) official chat template with a system prompt.
+    Applies the model's chat template with a system prompt.
+
+    Args:
+        example: dict - sample from json file
+        tokenizer: obj - LLM tokenizer
+
+    Returns:
+         dict - sample text with chat template applied
     """
 
     GENERATION_SYSTEM_PROMPT = """ You are a biomedical entity recognition specialist. Your only task is to identify all relevant drugs, diseases, genes, and proteins from the provided question and options, NOT to answer it.

@@ -1,3 +1,7 @@
+"""
+Code for using SFT DeepSeek-R1-distill-qwen-1.5b on self-correct dataset
+"""
+
 import os
 import wandb
 from datasets import load_dataset
@@ -14,6 +18,7 @@ wandb.login(key=os.getenv('WANDB_LOGIN_KEY'))
 if __name__=="__main__":
     args = get_args_sft_deepseek()
 
+    print('Loading LLM and its tokenizer')
     original_model, tokenizer = load_llm(model_path=args.model_path, quantized=args.quantized)
 
     print("Loading raw dataset...")

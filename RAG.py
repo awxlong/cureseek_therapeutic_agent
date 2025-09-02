@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Classes and helper functions for Retrieval Augmented Generation (RAG)
 """
@@ -16,16 +15,14 @@ import pdb
 
 class PrimeKG_Querier:
     """
-    A class to intelligently query the PrimeKG knowledge graph by using an LLM
-    for entity extraction and robust Python code for the actual query logic.
+    A class to query the PrimeKG knowledge graph
     """
     def __init__(self, kg_path: str):
         """
-        Loads the PrimeKG DataFrame and stores the LLM instance.
+        Loads the PrimeKG DataFrame
 
         Args:
             kg_path (str): The file path to 'kg.csv'.
-            llm_instance: Your initialized deepseek-r1-distill model.
         """
 
         print(f"Loading PrimeKG from {kg_path}...")
@@ -39,33 +36,35 @@ class PrimeKG_Querier:
             print(f"ERROR: PrimeKG file not found at '{kg_path}'. This module will be disabled.")
             self.kg = None
 
-    def get_facts_for_mcq(self, entities: dict, question: str, options: dict, max_facts: int = 20) -> List[str]:
+    def get_facts_for_mcq(self, potential_entities: dict, max_facts: int = 20) -> List[str]:
         """
         The main public method to get facts for a given MCQ.
-
+        Args:
+            entities: dict - a file containing relevant (drug, demographic) entities 
+            extracted from therapeutic questions
+            max_facts: int - a upperbound to number of facts which can be extracted
+            from PrimeKG.
         Returns:
             A list of formatted strings representing the facts.
         """
         if self.kg is None:
             return []
-
-        # Step 1: Use LLM to get a list of potential entities
-        potential_entities = entities
+        
         if not potential_entities:
             print("No potential entities extracted by the LLM.")
             return []
+        
         print(f"\nLLM extracted {len(potential_entities)} potential entities.")
 
-        # Step 2: Validate entities against the KG (Mitigates Hallucination)
-        # This is the key step for robustness!
+        # Constrain valid entities from PrimeKG
         valid_entities = [entity for entity in potential_entities if entity in self.known_entity_set]
         print(f"Found {len(valid_entities)} valid entities that exist in PrimeKG: {valid_entities}")
 
         if not valid_entities:
             return []
 
-        # Step 3: Execute the fixed, reliable pandas query
-        # We query for facts where the entity is either the subject (x_name) or object (y_name)
+        # We explicitly query to PrimeKg for facts where 
+        # the entity is either the subject (x_name) or object (y_name)
         facts_df = self.kg[
             self.kg['x_name'].str.lower().isin(valid_entities) |
             self.kg['y_name'].str.lower().isin(valid_entities)
@@ -81,24 +80,30 @@ class PrimeKG_Querier:
     
 class MedRAG:
     """
-    A unified RAG system that intelligently searches both peer-reviewed literature
+    A unified retrieval system that searches both peer-reviewed literature
     and pre-prints via the Europe PMC and NCBI APIs.
     """
-    def __init__(self, embedding_model, tool_name="MedRAG_System", email="your.email@example.com"):
+    def __init__(self, embedding_model, tool_name="MedRAG_System", email="loremipsum@mail.com"):
+        """
+        Args:
+            embedding_model: obj - we use Qwen2-1.5b-instruct to extract text embeddings
+            email: str - email address to make API calls to the EuropePMC
+        """
         self.europe_pmc_url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
         self.ncbi_base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
         self.id_converter_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
         self.tool_name = tool_name
         self.email = email
-        self.embedding_model = embedding_model  # <-- CRITICAL: The class now holds the embedding model
+        self.embedding_model = embedding_model 
         if not self.embedding_model:
             raise ValueError("An embedding model instance is required for UnifiedRAG.")
         print("MedRAG system initialized with embedding-based passage ranking.")
-
-    # --- Private helper methods for fetching and chunking ---
     
     def _chunk_text(self, text: str, chunk_size: int = 256, overlap: int = 32) -> List[str]:
-        """Splits text into smaller, overlapping chunks based on word count."""
+        """
+        Splits text into smaller, overlapping chunks based on word count to reduce
+        computational budget when processing extremely large PMC Full Articles.
+        """
         words = text.split()
         if not words: return []
         chunks = []
@@ -123,10 +128,8 @@ class MedRAG:
         """
         Parses an XML element for an article and returns the best available text
         in a hierarchical order: Body > Abstract > Title.
-
-        This is the key to robustly handling different article types and access levels.
         """
-        # Priority 1: Try to find the full body text.
+        # 1: Try to find the full body text.
         body_node = article_xml.find('.//body')
         if body_node is not None:
             # Use itertext() within the body to get all text from its children
@@ -135,7 +138,7 @@ class MedRAG:
             if len(body_text.strip()) > 100: # Heuristic for non-empty body
                 return re.sub(r'\s+', ' ', body_text).strip()
 
-        # Priority 2: If no body, find the abstract.
+        # 2: If no body, find the abstract.
         # Note: PubMed and PMC use different tag names for the abstract.
         abstract_node = article_xml.find('.//abstract')  # For PMC
         if abstract_node is None:
@@ -145,7 +148,7 @@ class MedRAG:
             abstract_text = " ".join(abstract_node.itertext())
             return re.sub(r'\s+', ' ', abstract_text).strip()
 
-        # Priority 3: If all else fails, return the title.
+        # 3: If all else fails, at least return the title.
         title_node = article_xml.find('.//article-title') # For PMC
         if title_node is None:
             title_node = article_xml.find('.//ArticleTitle') # For PubMed
@@ -160,6 +163,7 @@ class MedRAG:
 
     def _fetch_full_text_from_pmc(self, pmcids: List[str]) -> List[dict]:
         if not pmcids: return []
+
         print(f"Fetching best available text for {len(pmcids)} PMC articles...")
         articles = []
         try:
@@ -172,7 +176,6 @@ class MedRAG:
                 pmid_node = article_xml.find(".//*[@pub-id-type='pmid']")
                 title_node = article_xml.find('.//article-title')
                 
-                # Use our new, robust parser
                 content = self._parse_best_available_content(article_xml)
 
                 articles.append({
@@ -188,6 +191,7 @@ class MedRAG:
 
     def _fetch_abstracts_from_pubmed(self, pmids: List[str]) -> List[dict]:
         if not pmids: return []
+
         print(f"Fetching abstracts for {len(pmids)} PubMed articles...")
         articles = []
         try:
@@ -210,6 +214,7 @@ class MedRAG:
                 })
         except (requests.exceptions.RequestException, ET.ParseError) as e:
             print(f"Error fetching/parsing from PubMed: {e}")
+
         return articles
             
     def search_and_rank_passages(self, query: str, user_question: str, max_articles: int = 5, max_passages_per_llm_context: int = 5, rank: bool = True) -> List[dict]:
@@ -329,17 +334,28 @@ class MedRAG:
             return final_articles
     
     def rank_passages(self, all_passages: List[str], user_question: str, max_passages_per_llm_context: int = 5) -> List[str]:
-        # Step 2b: Embed all passages and the query
+        """
+        Isolated helper function to extract the top passages relevant to answer a question when a shorter
+        context is needed to reduced inference's computational overhead
+
+        Args:
+            all_passages: List[str] - list of EuropePMC passages extracted above
+            user_question: str - user question from test json file 
+            max_passages_per_llm_context: int = 5 - how many passages to extract
+
+        Returns:
+            top_relevant_passages: List[str] - list of relevant passages
+        """
         print("Embedding passages and query (this may take a moment)...")
         passage_embeddings = np.array(self.embedding_model.embed_documents(all_passages))
         query_embedding = np.array(self.embedding_model.embed_query(user_question)).reshape(1, -1) # embed user question instead of query
         
-        # Step 2c: Normalize and calculate similarity
+        # Reuse: Normalize and calculate similarity
         passage_embeddings_norm = normalize(passage_embeddings, axis=1, norm='l2')
         query_embedding_norm = normalize(query_embedding, axis=1, norm='l2')
         similarities = np.dot(query_embedding_norm, passage_embeddings_norm.T)[0]
         
-        # Step 2d: Get the top N most relevant passages
+        # Reuse: Get the top N most relevant passages
         top_passage_indices = np.argsort(similarities)[-max_passages_per_llm_context:][::-1]
 
         top_relevant_passages = [all_passages[idx] for idx in top_passage_indices]

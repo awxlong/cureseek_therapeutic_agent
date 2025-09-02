@@ -1,4 +1,4 @@
-# CureSeek: Code for CURE-Bench
+# CureSeek Therapeutic Agent: Code for CURE-Bench
 
 We participated in the [CURE-Bench competition](https://www.kaggle.com/competitions/cure-bench) on therapeutic reasoning via external tool usage with LLMs, and we open-source our code. 
 

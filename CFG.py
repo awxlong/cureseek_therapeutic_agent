@@ -1,3 +1,7 @@
+"""
+Code containing reusable hyperparameters of used LLMs.
+"""
+
 import torch
 
 class CFG:

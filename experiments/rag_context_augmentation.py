@@ -1,4 +1,9 @@
-
+"""
+Code for running inference with quantized TxAgent on test questions via RAG
+using context augmented thanks to information extracted from European PMC and
+PrimeKG. 
+TxAgent is described in https://github.com/mims-harvard/TxAgent
+"""
 
 from RAG import MedRAG, PrimeKG_Querier
 from args import get_args_context_augmentation
@@ -12,15 +17,18 @@ if __name__=="__main__":
 
     args = get_args_context_augmentation()
 
-    # Loading necessary datasets and retrieval systems
+    # Loading necessary datasets
     with open(args.entity_extraction_path, 'r') as f:
         deepseek_entity_extraction = json.load(f)
     with open(args.complex_query_path, 'r') as f:
         deepseek_complex_query = json.load(f)
     with open(args.test_questions_path, 'r') as f:
         test_questions = [json.loads(l) for l in f]
+    
+    # Loading test set with partial answers, i.e., No answer entries to be filled in
     incomplete_quantized_txagent = pd.read_csv(args.incomplete_submission)
 
+    # Loading retrieval systems
     embedding_model = LlamaCppEmbeddings(
         repo_id=args.embedding_repo_id,
         filename=args.embedding_filename,
@@ -32,11 +40,10 @@ if __name__=="__main__":
     id_lookup_entity = {sample['id']: sample for sample in deepseek_entity_extraction}
     id_lookup_test_questions = {sample['id']: sample for sample in test_questions}
 
-    # Resume processing after failed attempt
-    # Load processed file
+    # Resumability: Load IDs that have already been processed 
     with open(args.progress_path, 'r') as f:
         temp = [json.loads(l) for l in f]
-
+        
     with open(args.output_file, 'w') as f:
         for obj in temp:
             f.write(json.dumps(obj) + '\n')
@@ -49,10 +56,10 @@ if __name__=="__main__":
                 data = json.loads(line)
                 # print(data['id'])
                 processed_ids.add(data['id'])
-            
-        print(f"Found {len(processed_ids)} completed entries. Resuming from where we left off.")
 
+    print(f"Found {len(processed_ids)} completed entries. Resuming from where we left off.")
     all_incomplete_ids = set(incomplete_quantized_txagent[incomplete_quantized_txagent['choice'] == 'No answer']['id'])
+    
     ids_to_process = sorted(list(all_incomplete_ids - processed_ids)) # Process only the ones not yet done
 
     parallel_processing_context_augmentation(ids_to_process=ids_to_process, all_incomplete_ids=all_incomplete_ids, processed_ids=processed_ids, output_file_path=args.output_file, \

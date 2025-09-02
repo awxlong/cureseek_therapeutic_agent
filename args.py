@@ -1,4 +1,34 @@
+"""
+Code for parsing arguments for files in experiments/
+"""
+
 import argparse
+
+def get_args_deepseek_inference():
+    parser = argparse.ArgumentParser(description="Arguments for loading and running LLM inference")
+
+    parser.add_argument(
+        "--model_path", type=str, required=True,
+        help="Path to the model directory or file."
+    )
+    parser.add_argument(
+        "--quantized", action="store_true",
+        help="Use this flag to load a quantized version of the model."
+    )
+    parser.add_argument(
+        "--data_file_path", type=str, required=True,
+        help="Path to the JSON file containing the test dataset."
+    )
+    parser.add_argument(
+        "--output_file", type=str, default="test_results_original_deepseek.jsonl",
+        help="Path to save output results. Default is 'test_results_original_deepseek.jsonl'"
+    )
+    parser.add_argument(
+        "--load_finetuned", action="store_true",
+        help="Set this flag to load the fine-tuned merged model (overrides load_finetuned=True in code)."
+    )
+
+    return parser.parse_args()
 
 def get_args_quantized_txagent_inference():
     parser = argparse.ArgumentParser(description="Process CureBench data with optional resume capability.")

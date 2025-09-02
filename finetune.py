@@ -2,14 +2,11 @@
 """
 Classes and helper functions for supervised fine-tuning
 
-Code is written to run on Kaggle
+Code is written to run on Kaggle, 
+and is elaborated upon https://www.kaggle.com/code/danielphalen/grpotrainer-deepseekr1
 """
-
-
 from peft import LoraConfig, get_peft_model, PeftModel
 from trl import SFTTrainer, SFTConfig 
-
-
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -18,7 +15,6 @@ from transformers import (
 import torch
 import os
 from CFG import *
-
 
 def supervised_finetune(model, tokenizer, dataset):
     # --- PEFT & LoRA Configuration ---
@@ -31,13 +27,12 @@ def supervised_finetune(model, tokenizer, dataset):
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
     )
 
-    # Wrap the base model with PEFT model (Attach the "Sticky Notes")
+    # Wrap the base model with PEFT model (attach "sticky notes")
     print("Attaching LoRA adapters to the model...")
     model = get_peft_model(model, peft_config)
     print("LoRA adapters attached.")
 
-
-    # --- SFT Configuration ---
+    # --- SFT Configuration
     # trl's current version SFTConfig to hold ALL arguments
     # that were previously in TrainingArguments
 
@@ -60,7 +55,7 @@ def supervised_finetune(model, tokenizer, dataset):
         packing=use_packing, 
     )
 
-    # --- Initialize the Trainer and Start Training ---
+    # --- Initialize trainer
 
     trainer = SFTTrainer(
         model=model,
@@ -68,10 +63,6 @@ def supervised_finetune(model, tokenizer, dataset):
         args=sft_config, 
         train_dataset=dataset,
     )
-
-    trainer.label_smoother = None
-
-
 
     print("Starting SFT training...")
     trainer.train()
@@ -82,8 +73,7 @@ def supervised_finetune(model, tokenizer, dataset):
     trainer.model.save_pretrained(final_adapter_path)
     print(f"SFT LoRA adapter saved to {final_adapter_path}")
 
-    # --- Merge the adapter and perform inference¶
-
+    # --- Merge the adapter
     ADAPTER_PATH = os.path.join('/kaggle/working', final_adapter_path) # Path from the previous training step
     MERGED_MODEL_PATH = "/kaggle/working/cureseek-sft-v1-merged" # Where to save the new model
 
