@@ -1,10 +1,13 @@
 # Code for CUREBench
 Please submit your wandb login API key to run do supervised finetuning 
 
+
 ## What didn't work out:
 The supervised finetuning pipeline is mainly elaborated upon https://www.kaggle.com/code/danielphalen/grpotrainer-deepseekr1
 
 Download PrimeKG by running `wget -O kg.csv https://dataverse.harvard.edu/api/access/datafile/6180620`, and check https://github.com/mims-harvard/PrimeKG for more details. Mechanistically, it's a Pandas dataframe which you can query and check [PrimeKG_Querier](RAG.py) to see how we use it. 
+
+The validation and test sets can be downloaded through Kaggle after joining and accepting the terms and conditions of the [CURE-Bench competition](https://www.kaggle.com/competitions/cure-bench) 
 
 1. I generated self-corrected data for self-distillation
 2. I finetuned DeepSeek which didn't work
