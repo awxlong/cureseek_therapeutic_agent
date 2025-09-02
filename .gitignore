@@ -8,3 +8,4 @@ jupyter_notebooks/*
 # !data/entity_extraction_processed.json
 # !data/rag_inference.jsonl
 cmds.txt
+starter-kit/*
