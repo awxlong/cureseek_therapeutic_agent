@@ -110,8 +110,6 @@ def load_finetuned_llm(model_path='kaggle/working/cureseek-v2-merged', quantized
 
 def load_quantized_llm(repo_id = "mradermacher/TxAgent-T1-Llama-3.1-8B-GGUF", filename = "TxAgent-T1-Llama-3.1-8B.Q8_0.gguf"):
     # """Load model with Kaggle GPU constraints"""
-    # os.environ["GGML_CUDA_FORCE_MMQ"] = "1"
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Ensure Kaggle's GPU is visible
     
     llm = Llama.from_pretrained(
         repo_id=repo_id,
