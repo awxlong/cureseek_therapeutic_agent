@@ -1,3 +1,10 @@
-kg.csv
+data/kg.csv
 results/*
 competition_test_results/*
+model_ckpoints/*
+data/*
+jupyter_notebooks/*
+!data/curebench_results_test_8.json
+!data/entity_extraction_processed.json
+!data/rag_inference.jsonl
+cmds.txt

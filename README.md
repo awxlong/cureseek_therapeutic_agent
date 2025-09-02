@@ -1,4 +1,20 @@
-# CURE-Bench Starter Kit
+# Code for CUREBench
+Please submit your wandb login API key to run do supervised finetuning 
+
+## What didn't work out:
+The supervised finetuning pipeline is mainly elaborated upon https://www.kaggle.com/code/danielphalen/grpotrainer-deepseekr1
+
+Download PrimeKG by running `wget -O kg.csv https://dataverse.harvard.edu/api/access/datafile/6180620`, and check https://github.com/mims-harvard/PrimeKG for more details. Mechanistically, it's a Pandas dataframe which you can query and check [PrimeKG_Querier](RAG.py) to see how we use it. 
+
+1. I generated self-corrected data for self-distillation
+2. I finetuned DeepSeek which didn't work
+3. I performed inference with quantized TxAgent but there were missing answers
+4. I generated entities to use for RAG
+5. I did RAG with quantized TxAgent on missing answers
+
+Frankly, just doing online RAG with a reasoning LLM would be enough. 
+
+## CUREBench Starter Kit
 
 [![ProjectPage](https://img.shields.io/badge/CUREBench-Page-red)](https://curebench.ai) [![ProjectPage](https://img.shields.io/badge/CUREBench-Kaggle-green)](https://www.kaggle.com/competitions/cure-bench)
 
